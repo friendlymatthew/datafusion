@@ -154,6 +154,26 @@ tempfile = "3"
 tokio = { version = "1.43", features = ["macros", "rt", "sync"] }
 url = "2.5.4"
 
+[patch.crates-io]
+arrow = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow" }
+arrow-arith = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-arith" }
+arrow-array = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-array" }
+arrow-avro = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-avro" }
+arrow-buffer = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-buffer" }
+arrow-cast = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-cast" }
+arrow-csv = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-csv" }
+arrow-data = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-data" }
+arrow-flight = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-flight" }
+arrow-ipc = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-ipc" }
+arrow-json = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-json" }
+arrow-ord = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-ord" }
+arrow-row = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-row" }
+arrow-schema = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-schema" }
+arrow-select = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-select" }
+arrow-string = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "arrow-string" }
+parquet = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "parquet" }
+parquet-derive = { git = "https://github.com/friendlymatthew/arrow-rs.git", branch = "friendlymatthew/cast-date-to-timestamp-tz-54.1.0", package = "parquet_derive" }
+
 [profile.release]
 codegen-units = 1
 lto = true
