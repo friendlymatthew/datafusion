@@ -248,11 +248,13 @@ fn _to_char_scalar(
             ))
         }
     } else {
-        if data_type == &Date32 {
-            return _to_char_scalar(expression.clone().cast_to(&Date64, None)?, format);
+        // WIP: If the initial format attempt with a Date32 fails, we'll retry the format with a Date64.
+        match data_type {
+            &Date32 => {
+                _to_char_scalar(expression.clone().cast_to(&Date64, None)?, format)
+            }
+            _ => exec_err!("{}", formatted.unwrap_err()),
         }
-
-        exec_err!("{}", formatted.unwrap_err())
     }
 }
 
@@ -261,6 +263,9 @@ fn _to_char_array(args: &[ColumnarValue]) -> Result<ColumnarValue> {
     let mut results: Vec<Option<String>> = vec![];
     let format_array = arrays[1].as_string::<i32>();
     let data_type = arrays[0].data_type();
+
+    dbg!("total len", arrays[0].len());
+    dbg!("arrays[0]", arrays[0].as_ref());
 
     for idx in 0..arrays[0].len() {
         let format = if format_array.is_null(idx) {
@@ -283,6 +288,8 @@ fn _to_char_array(args: &[ColumnarValue]) -> Result<ColumnarValue> {
         match result {
             Ok(value) => results.push(Some(value)),
             Err(e) => {
+                dbg!(idx);
+
                 if data_type == &Date32 {
                     let format_options = match _build_format_options(&Date64, format) {
                         Ok(value) => value,
@@ -290,6 +297,7 @@ fn _to_char_array(args: &[ColumnarValue]) -> Result<ColumnarValue> {
                     };
 
                     let array = cast(arrays[0].as_ref(), &Date64)?;
+                    dbg!(&array);
                     let formatter =
                         ArrayFormatter::try_new(array.as_ref(), &format_options)?;
                     let result = formatter.value(idx).try_to_string();
@@ -331,6 +339,86 @@ mod tests {
     use datafusion_common::ScalarValue;
     use datafusion_expr::{ColumnarValue, ScalarUDFImpl};
     use std::sync::Arc;
+
+    #[test]
+    fn test_to_char_scalar() {
+        let value = Arc::new(Date32Array::from(vec![18506, 18507])) as ArrayRef;
+        let format = ScalarValue::Utf8(Some("%Y::%m::%d %S::%M::%H %f".to_string()));
+        let expected = StringArray::from(vec![
+            "2020::09::01 00::00::00 000000000",
+            "2020::09::02 00::00::00 000000000",
+        ]);
+
+        let batch_len = value.len();
+        let args = datafusion_expr::ScalarFunctionArgs {
+            args: vec![
+                ColumnarValue::Array(value as ArrayRef),
+                ColumnarValue::Scalar(format),
+            ],
+            number_rows: batch_len,
+            return_type: &DataType::Utf8,
+        };
+        let result = ToCharFunc::new()
+            .invoke_with_args(args)
+            .expect("that to_char parsed values without error");
+
+        if let ColumnarValue::Array(result) = result {
+            assert_eq!(result.len(), 2);
+            assert_eq!(&expected as &dyn Array, result.as_ref());
+        } else {
+            panic!("Expected an array value")
+        }
+    }
+
+    #[test]
+    fn test_to_char_array() {
+        // there are two paths when formatting
+        // if the # of formats is 1 => treat it as a scalar and call _to_char_scalar
+        //                     else => treat it as an array
+
+        // The array case is a bit interesting
+        // Here, the value is something like PrimitiveArray<Date32>[2020-09-01, 2020-09-20]
+
+        // They loop over the value elements, _but_ when they go to format, they pass the entire value and specify which element to format.
+
+        // Right now, inside the loop, anytime a Date32 format fails, I recast the _entire_ value as a PrimitiveArray<Date64>, which is a bit poor.
+        // Either I could:
+        // - Whenever my value is a PrimitiveArray<Date32>, just eagerly cast it to a Primitive<Date64>
+        // - If my value is a PrimitiveArray<Date32> and the format at the ith Date fails, cast it to a Primitive<Date64> and carry on.
+        // - Don't touch the value, if the format at the ith Date fails, somehow figure out a way to access that ith Date32 value, and try to format it as a Date64 scalar value?
+
+        let value = Arc::new(Date32Array::from(vec![18506, 18507])) as ArrayRef;
+        let format = StringArray::from(vec![
+            "%Y::%m::%d %S::%M::%H %f",
+            "%Y::%m::%d %S::%M::%H %f",
+        ]);
+        let expected = StringArray::from(vec![
+            "2020::09::01 00::00::00 000000000",
+            "2020::09::02 00::00::00 000000000",
+        ]);
+
+        let batch_len = value.len();
+        let args = datafusion_expr::ScalarFunctionArgs {
+            args: vec![
+                ColumnarValue::Array(value),
+                ColumnarValue::Array(Arc::new(format) as ArrayRef),
+            ],
+            number_rows: batch_len,
+            return_type: &DataType::Utf8,
+        };
+        let result = ToCharFunc::new()
+            .invoke_with_args(args)
+            .expect("that to_char parsed values without error");
+
+        if let ColumnarValue::Array(result) = result {
+            assert_eq!(result.len(), 2);
+            assert_eq!(&expected as &dyn Array, result.as_ref());
+        } else {
+            panic!("Expected an array value")
+        }
+
+        assert!(false);
+    }
 
     #[test]
     fn test_to_char() {
